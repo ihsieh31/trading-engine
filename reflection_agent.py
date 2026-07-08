@@ -17,6 +17,7 @@ from typing import Literal
 from openai import OpenAI
 from config import Config
 from event_bus import EventBus
+from thesis_tracker import detect_drift, load_thesis, close_thesis
 
 log = logging.getLogger(__name__)
 
@@ -301,6 +302,13 @@ class ReflectionAgent:
                 kb_entry = result.to_kb_entry()
                 self.kb.add_reflection(kb_entry)
                 results.append(result)
+                thesis = load_thesis(ticker)
+                if thesis:
+                    drift = detect_drift(thesis, context["exit_price"])
+                    result.context_tags.append(f"drift:{drift.get('drift_type', 'unknown')}")
+                    log.info(f"[{ticker}] Thesis drift: {drift.get('drift_type', 'unknown')} "
+                             f"(price Δ{drift.get('price_change_pct', 0):+.1f}%)")
+                    close_thesis(ticker, context["exit_price"], f"Reflection: {result.outcome}")
                 log.info(f"[{ticker}] Reflection done: {result.outcome} — {result.trading_rule[:60]}")
                 EventBus.get_instance().emit("reflection_completed", {
                     "ticker": ticker, "outcome": result.outcome,

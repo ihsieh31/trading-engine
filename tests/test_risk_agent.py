@@ -48,7 +48,9 @@ def test_bear_regime_blocks_low_confidence_buy(risk_agent):
     """熊市時低信心(<0.85)的 BUY 應該被擋。"""
     proposal = AgentProposal(
         agent_name="test", ticker="AAPL", rating="BUY",
-        confidence=0.5, thesis="buy low", price_target=200,
+        confidence=0.5,
+        thesis="Strong earnings growth is first reason. Market leadership is second. Innovation pipeline is third. Cash flow generation is why. Competitive moat is final reason.",
+        price_target=200,
         time_horizon="short", key_risks=[], supporting_rules_used=[],
     )
     state = PortfolioState(
@@ -64,7 +66,9 @@ def test_bear_regime_allows_high_confidence_buy(risk_agent):
     """熊市時高信心(>=0.85)的 BUY 應該放行進入 Kelly 計算。"""
     proposal = AgentProposal(
         agent_name="test", ticker="AAPL", rating="BUY",
-        confidence=0.9, thesis="strong setup", price_target=220,
+        confidence=0.9,
+        thesis="Strong earnings growth is first reason. Market leadership is second. Innovation pipeline is third. Cash flow generation is why. Competitive moat is final reason.",
+        price_target=220,
         time_horizon="short", key_risks=[], supporting_rules_used=[],
     )
     state = PortfolioState(

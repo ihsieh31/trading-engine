@@ -5,9 +5,11 @@ import json
 import logging
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
+from decimal import Decimal
 from sector_map import sector_allows, get_sector
 from config import Config
 from adapters import PriceProvider
+from lib.financial_rigor import exact, verify_valuation, benford_check
 
 log = logging.getLogger(__name__)
 
@@ -112,10 +114,10 @@ class PortfolioManager:
                           min_position_pct: float = 0.02) -> float:
         if avg_loss <= 0 or win_rate <= 0 or win_rate >= 1:
             return min_position_pct
-        b = avg_win / avg_loss
+        b = float(exact(avg_win) / exact(avg_loss))
         p = win_rate
         q = 1 - p
-        kelly = (p * b - q) / b
+        kelly = (p * b - q) / b if b != 0 else 0
         return max(0.0, min(kelly * kelly_fraction, max_position_pct))
 
     def get_kelly_inputs(self) -> dict:
@@ -409,6 +411,22 @@ class PortfolioManager:
 
     def get_current_price(self, ticker: str) -> float:
         return self.price_fn(ticker)
+
+    def verify_entry_valuation(self, ticker: str, price: float, eps: float = None,
+                                 bvps: float = None, fcf_per_share: float = None) -> dict:
+        try:
+            return verify_valuation(price, eps, bvps, fcf_per_share)
+        except Exception as e:
+            log.debug(f"[{ticker}] Valuation verify skipped: {e}")
+            return {}
+
+    def benford_check_trades(self) -> dict:
+        from db import load_trades
+        trades = load_trades(200)
+        prices = [t.get("price", 0) for t in trades if t.get("price", 0) > 0]
+        if len(prices) < 50:
+            return {"is_conforming": None, "reason": f"insufficient samples ({len(prices)}/50)"}
+        return benford_check(prices)
 
     def save_snapshot(self, regime: dict = None):
         acct = self.get_account_summary()

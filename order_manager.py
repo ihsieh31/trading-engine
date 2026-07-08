@@ -267,6 +267,12 @@ class OrderManager:
                     slippage_pct = (cumulative_avg_price - ref) / ref * 100
                     slippage = f" | slippage={slippage_pct:+.2f}%"
                 log.info(f"ORDER FILLED: {record.side} {filled_qty}x {record.ticker} @ ${cumulative_avg_price:.2f}{slippage}")
+                if record.side == "buy":
+                    try:
+                        from thesis_tracker import record_thesis
+                        record_thesis(record.ticker, record.reason, cumulative_avg_price, "Buy")
+                    except Exception as e:
+                        log.debug(f"[Thesis] Record failed for {record.ticker}: {e}")
                 self._bus.emit("order_filled", {
                     "ticker": record.ticker, "side": record.side,
                     "qty": filled_qty, "price": cumulative_avg_price,

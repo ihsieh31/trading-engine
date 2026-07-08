@@ -26,6 +26,21 @@ class RiskAgent(IRiskAgent):
         positions = portfolio_state.positions or {}
         regime = portfolio_state.regime
 
+        # 0. Mirror Test — 5 句話買入理由（BUY 時強制）
+        if proposal.rating == "BUY":
+            thesis = (proposal.thesis or "").strip()
+            sentences = [s.strip() for s in thesis.replace("\n", ".").split(".") if s.strip()]
+            valid_sentences = [s for s in sentences if len(s) > 10]
+            if len(valid_sentences) < 5:
+                return RiskAssessment(
+                    ticker=ticker, approved=False, position_pct=0.0,
+                    kelly_pct=0.0, sector_exposure_pct=0.0,
+                    veto_reason=f"Mirror Test failed: only {len(valid_sentences)}/5 valid sentences in thesis. "
+                                "A 5-sentence buy rationale is required before any BUY decision.",
+                )
+            if not any("why" in s.lower() or "因為" in s or "reason" in s.lower() for s in valid_sentences):
+                log.warning(f"[{ticker}] Mirror Test weak: thesis lacks causal reasoning")
+
         # 1. Regime gating
         # Bear regime: restrict new BUY entries (unless very high confidence),
         # but allow SELL/HOLD (exit/hold actions are fine in a bear market).
