@@ -246,10 +246,11 @@ async def _handle_tool(name: str, args: dict) -> Any:
             if trace_id:
                 events = db.get_events(trace_id=trace_id, limit=50)
             elif ticker:
+                safe_ticker = ticker.replace("%", r"\%").replace("_", r"\_")
                 conn = db._get_conn()
                 rows = conn.execute(
-                    "SELECT * FROM events WHERE payload_json LIKE ? ORDER BY id DESC LIMIT 50",
-                    (f"%{ticker}%",)
+                    "SELECT * FROM events WHERE payload_json LIKE ? ESCAPE '\\' ORDER BY id DESC LIMIT 50",
+                    (f"%{safe_ticker}%",)
                 ).fetchall()
                 events = []
                 for r in rows:

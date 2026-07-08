@@ -6,6 +6,7 @@
 import json
 import math
 import time
+import secrets
 import logging
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
@@ -19,7 +20,9 @@ _cfg = Config()
 DATA_DIR = _cfg.DATA_DIR
 DASHBOARD_TOKEN = _cfg.DASHBOARD_TOKEN
 if not DASHBOARD_TOKEN:
-    log.warning("DASHBOARD_TOKEN not set — dashboard has NO authentication! Set it in .env for production.")
+    DASHBOARD_TOKEN = secrets.token_hex(32)
+    log.info(f"DASHBOARD_TOKEN not set — generated random token: {DASHBOARD_TOKEN}")
+    log.info("Set DASHBOARD_TOKEN in .env to use a fixed token.")
 
 _container = None
 
@@ -34,8 +37,8 @@ app = Flask(__name__)
 
 @app.after_request
 def _add_cors(response):
-    response.headers["Access-Control-Allow-Origin"] = "*"
-    response.headers["Access-Control-Allow-Headers"] = "*"
+    response.headers["Access-Control-Allow-Origin"] = "http://localhost:8899"
+    response.headers["Access-Control-Allow-Headers"] = "X-Dashboard-Token"
     response.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
     return response
 
@@ -77,7 +80,7 @@ def safe_float(v, default=0.0):
 def _check_token():
     if not DASHBOARD_TOKEN:
         return None
-    token = request.headers.get("X-Dashboard-Token", request.args.get("token", ""))
+    token = request.headers.get("X-Dashboard-Token", "")
     if token != DASHBOARD_TOKEN:
         return jsonify(clean({"error": "unauthorized"})), 401
 

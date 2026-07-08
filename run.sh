@@ -19,7 +19,7 @@ ask() {
 }
 
 ask_secret() {
-    read -s -p "$1" val; echo; echo "$val"
+    read -s -p "$1" val; echo; printf '%s\n' "$val"
 }
 
 # ── virtualenv ──
@@ -47,7 +47,7 @@ menu() {
             2) python deep_analyzer.py;;
             3) info "$(t "Starting scheduler (Ctrl+C to stop)..." "啟動排程器 (Ctrl+C 停止)...")"; exec python scheduler.py;;
             4) info "$(t "Starting dashboard..." "啟動儀表板...")"; python dashboard.py;;
-            5) rm -f .env; exec bash "$0";;
+            5) read -p "$(t "  Confirm delete .env and reconfigure? (y/N): " "  確定刪除 .env 重新設定？(y/N): ")" confirm; [ "$confirm" = "y" ] || [ "$confirm" = "Y" ] && rm -f .env && exec bash "$0";;
             *) exit 0;;
         esac
     done
