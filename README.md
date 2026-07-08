@@ -626,6 +626,7 @@ python -c "from knowledge_base import KnowledgeBase; kb=KnowledgeBase(); kb.rebu
 
 - [daily_stock_analysis](https://github.com/ZhuLinsen/daily_stock_analysis) — 股票分析流程參考
 - [TradingAgents](https://github.com/TauricResearch/TradingAgents) — LLM 多 Agent 交易分析框架
+- [AI Berkshire](https://github.com/xbtlin/ai-berkshire) — 價值投資研究框架啟發，本專案之 `lib/financial_rigor.py`（精確十進位計算/市值驗證/Benford 檢測）、screener 第二層價值評分、Mirror Test（5 句買入理由）、Thesis Tracker（投資論點偏移檢測）均借鑒其方法與實作
 - `economics-knowledge.yaml` — 整合 100+ 經典著作、IMF 論文、學術期刊共 1,457 個來源
 
 ## 免責聲明
