@@ -202,7 +202,7 @@
 ### 安裝
 
 ```bash
-git clone <your-repo-url> ~/trading_engine
+git clone https://github.com/ihsieh31/trading-engine.git ~/trading_engine
 cd ~/trading_engine
 ./run.sh
 ```
