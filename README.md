@@ -207,7 +207,7 @@ cd ~/trading_engine
 ./run.sh
 ```
 
-首次執行 `./run.sh` 會啟動互動式設定精靈：
+首次執行 `./run.sh` 會啟動設定選單：
 
 1. 選擇語言（中文 / English）
 2. 輸入 LLM API Key、API Endpoint、模型 ID（相容任何 OpenAI-format）
