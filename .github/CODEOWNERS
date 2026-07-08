@@ -1,0 +1,5 @@
+# 只有 ihsieh31 可以修改 workflow 與 opencode 設定
+.github/workflows/opencode.yml          @ihsieh31
+.opencode/                               @ihsieh31
+opencode.json                            @ihsieh31
+opencode.jsonc                           @ihsieh31

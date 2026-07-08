@@ -1,27 +1,22 @@
+# ═══════════════════════════════════════════════════════════════
+#  高階指令 — 僅限 repo owner (ihsieh31) 使用
+#  不可修改：此檔案受 CODEOWNERS 保護，變更需 ihsieh31 審核
+#  修改此檔案等同修改系統安全設定
+# ═══════════════════════════════════════════════════════════════
+
 name: opencode
 on:
   issue_comment:
     types: [created]
-  pull_request_review_comment:
-    types: [created]
   issues:
     types: [opened, edited]
-  pull_request:
-    types: [opened, synchronize, reopened, ready_for_review]
-  schedule:
-    - cron: "0 9 * * 1"
-  workflow_dispatch:
 
 jobs:
   opencode:
     if: |
-      (github.event_name == 'schedule' ||
-       github.event_name == 'workflow_dispatch' ||
-       github.event_name == 'issues' ||
-       github.event_name == 'pull_request') ||
-      (github.event.comment.user.login == 'ihsieh31' &&
-       (contains(github.event.comment.body, '/oc') ||
-        contains(github.event.comment.body, '/opencode')))
+      github.event.comment.user.login == 'ihsieh31' &&
+      (contains(github.event.comment.body, '/oc') ||
+       contains(github.event.comment.body, '/opencode'))
     runs-on: ubuntu-latest
     permissions:
       id-token: write
