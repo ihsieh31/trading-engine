@@ -1,5 +1,8 @@
 # Trading Engine — 全自動美股交易系統 <br><sub>v0.3.0</sub>
 
+> **🇬🇧 English Version**: [github.com/ihsieh31/trading-engine-english-version-](https://github.com/ihsieh31/trading-engine-english-version-)  
+> **中文版**：本倉庫 — [github.com/ihsieh31/trading-engine](https://github.com/ihsieh31/trading-engine)
+
 基於 **技術指標篩選 → LLM 多 Agent 深度分析 → 多 Agent 風控與決策 → 盤中監控 → 自動下單 → 交易後反思學習** 的全自動 S&P 500 交易系統，搭載事件驅動架構、Plugin 外掛系統、MCP AI 整合介面與內建交易知識庫。
 
 > **Paper Trading Only** — 使用 Alpaca Paper Trading API，100% 模擬資金，無真實風險。
