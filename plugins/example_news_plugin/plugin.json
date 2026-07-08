@@ -1,0 +1,15 @@
+{
+  "id": "example_news_plugin",
+  "name": "Example News Source",
+  "version": "1.0.0",
+  "type": "data_source",
+  "entrypoint": "plugin.py:ExampleNewsPlugin",
+  "interfaces_implemented": ["INewsProvider"],
+  "config_schema": {
+    "type": "object",
+    "properties": {
+      "api_key": {"type": "string"},
+      "base_url": {"type": "string"}
+    }
+  }
+}

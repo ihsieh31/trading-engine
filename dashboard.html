@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trading Engine · Monitor</title>
+<style>
+:root {
+  --bg: #0d1117;
+  --bg-card: #161b22;
+  --bg-card-hover: #1c2333;
+  --border: #30363d;
+  --border-subtle: #21262d;
+  --text: #e6edf3;
+  --text-secondary: #8b949e;
+  --text-muted: #6e7681;
+  --green: #3fb950;
+  --green-bg: rgba(63,185,80,0.12);
+  --red: #f85149;
+  --red-bg: rgba(248,81,73,0.12);
+  --yellow: #d29922;
+  --yellow-bg: rgba(210,153,34,0.12);
+  --blue: #58a6ff;
+  --blue-bg: rgba(88,166,255,0.12);
+  --purple: #bc8cff;
+  --font-mono: "SF Mono","Cascadia Code","JetBrains Mono",ui-monospace,monospace;
+  --font-sans: -apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans",Helvetica,Arial,sans-serif;
+  --radius: 8px;
+  --radius-sm: 6px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{font-size:14px;-webkit-font-smoothing:antialiased}
+body{font-family:var(--font-sans);background:var(--bg);color:var(--text);line-height:1.5;padding:20px}
+a{color:var(--blue);text-decoration:none}
+a:hover{text-decoration:underline}
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:var(--text-muted)}
+
+/* Header */
+.header{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;padding-bottom:16px;margin-bottom:20px;border-bottom:1px solid var(--border)}
+.header-left h1{font-size:20px;font-weight:600;letter-spacing:-0.03em;color:var(--text)}
+.header-left h1 span{color:var(--text-muted);font-weight:400}
+.header-left p{font-size:12px;color:var(--text-secondary);margin-top:2px}
+.header-right{display:flex;align-items:center;gap:16px;font-size:12px}
+.status-badge{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:500}
+.status-badge.live{background:var(--green-bg);color:var(--green);border:1px solid rgba(63,185,80,0.3)}
+.status-badge.off{background:var(--red-bg);color:var(--red);border:1px solid rgba(248,81,73,0.3)}
+.dot{display:inline-block;width:7px;height:7px;border-radius:50%}
+.dot-green{background:var(--green);box-shadow:0 0 6px rgba(63,185,80,0.5)}
+.dot-red{background:var(--red);box-shadow:0 0 6px rgba(248,81,73,0.5)}
+.dot-yellow{background:var(--yellow);box-shadow:0 0 6px rgba(210,153,34,0.5)}
+.dot-blue{background:var(--blue);box-shadow:0 0 6px rgba(88,166,255,0.5)}
+.dot-gray{background:var(--text-muted)}
+
+/* Summary Bar */
+.summary-bar{display:flex;gap:24px;flex-wrap:wrap;margin-bottom:20px;padding:12px 16px;background:var(--bg-card);border-radius:var(--radius);border:1px solid var(--border)}
+.summary-item{font-size:12px;color:var(--text-secondary);white-space:nowrap}
+.summary-item strong{color:var(--text);font-weight:600;font-size:14px}
+
+/* Grid */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:12px;margin-bottom:12px}
+.grid-full{grid-column:1/-1}
+
+/* Card */
+.card{background:var(--bg-card);border-radius:var(--radius);border:1px solid var(--border);padding:16px;transition:border-color 0.15s}
+.card:hover{border-color:var(--text-muted)}
+.card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.card-title{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-muted)}
+.card-title span{font-weight:400;text-transform:none;letter-spacing:0;color:var(--text-muted);margin-left:8px}
+.card-value{font-size:28px;font-weight:600;letter-spacing:-0.03em;color:var(--text);line-height:1.1}
+.card-value.sm{font-size:18px}
+.card-label{font-size:11px;color:var(--text-muted);margin-top:4px}
+
+/* Stat rows */
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:2px 16px;margin-top:10px}
+.stat-row{display:flex;justify-content:space-between;align-items:center;padding:5px 0;font-size:12px;border-bottom:1px solid var(--border-subtle)}
+.stat-row:last-child{border-bottom:none}
+.stat-label{color:var(--text-secondary)}
+.stat-value{color:var(--text);font-weight:500;font-family:var(--font-mono);font-size:12px;text-align:right}
+.green{color:var(--green)}
+.red{color:var(--red)}
+.yellow{color:var(--yellow)}
+.blue{color:var(--blue)}
+
+/* Badge */
+.badge{display:inline-block;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:600;letter-spacing:0.03em;text-transform:uppercase}
+.badge-buy,.badge-overweight{background:var(--green-bg);color:var(--green)}
+.badge-hold{background:var(--yellow-bg);color:var(--yellow)}
+.badge-underweight,.badge-sell{background:var(--red-bg);color:var(--red)}
+.badge-gray{background:rgba(139,148,158,0.12);color:var(--text-secondary)}
+.badge-green{background:var(--green-bg);color:var(--green)}
+.badge-red{background:var(--red-bg);color:var(--red)}
+
+/* Ticker */
+.ticker{font-weight:600;font-family:var(--font-mono);font-size:12px;color:var(--text)}
+
+/* Table */
+.table-wrap{overflow-x:auto;margin-top:8px}
+table{width:100%;border-collapse:collapse;font-size:12px}
+thead th{padding:7px 10px;text-align:left;font-weight:500;color:var(--text-muted);font-size:10px;text-transform:uppercase;letter-spacing:0.05em;border-bottom:1px solid var(--border);white-space:nowrap;user-select:none}
+tbody td{padding:7px 10px;border-bottom:1px solid var(--border-subtle);white-space:nowrap;font-size:12px}
+tbody tr:last-child td{border-bottom:none}
+tbody tr{transition:background 0.1s}
+tbody tr:hover{background:var(--bg-card-hover)}
+
+/* Mini Chart */
+.mini-chart{width:100%;height:72px;margin-top:4px}
+.mini-chart svg{width:100%;height:100%}
+
+/* Loading / Error / Empty */
+.loading{padding:20px 0;text-align:center;font-size:12px;color:var(--text-muted)}
+.error-state{color:var(--red);font-size:12px;padding:8px 0}
+.empty-state{padding:20px 0;text-align:center;font-size:12px;color:var(--text-muted)}
+
+/* Sector bar */
+.sector-bar{display:flex;gap:4px;flex-wrap:wrap;margin-top:8px}
+.sector-tag{padding:2px 8px;border-radius:4px;font-size:10px;font-weight:500;background:var(--bg-card-hover);color:var(--text-secondary);border:1px solid var(--border-subtle)}
+.sector-tag strong{color:var(--text);font-family:var(--font-mono);font-size:10px}
+
+/* Responsive */
+@media(max-width:768px){.grid{grid-template-columns:1fr}body{padding:12px}.summary-bar{gap:12px}}
+
+/* Animation */
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}
+.pulse{animation:pulse 2s ease-in-out infinite}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <h1>⟁ Trading Engine <span>· Monitor</span></h1>
+    <p>S&P 500 技術篩選 → 多智能體深度分析 → 動態風控 · Paper Trading · <span id="last-update">—</span></p>
+  </div>
+  <div class="header-right">
+    <span id="status-badge" class="status-badge off"><span class="dot dot-gray"></span>離線</span>
+    <span style="color:var(--text-muted)" id="clock">—</span>
+  </div>
+</div>
+
+<div class="summary-bar" id="summary-bar"></div>
+
+<div class="grid" id="app">
+
+  <!-- Market Regime -->
+  <div class="card" id="card-regime">
+    <div class="card-header">
+      <div class="card-title">Market Regime <span>— 市場情境</span></div>
+    </div>
+    <div id="regime-content"><div class="loading">載入中…</div></div>
+  </div>
+
+  <!-- Account -->
+  <div class="card" id="card-account">
+    <div class="card-header">
+      <div class="card-title">Account Overview <span>— 帳戶概覽</span></div>
+    </div>
+    <div id="account-content"><div class="loading">載入中…</div></div>
+  </div>
+
+  <!-- Performance -->
+  <div class="card" id="card-performance">
+    <div class="card-header">
+      <div class="card-title">Performance <span>— 績效指標</span></div>
+    </div>
+    <div id="perf-content"><div class="loading">載入中…</div></div>
+  </div>
+
+  <!-- Analysis Queue -->
+  <div class="card" id="card-queue">
+    <div class="card-header">
+      <div class="card-title">Analysis Queue <span>— 分析進度</span></div>
+    </div>
+    <div id="queue-content"><div class="loading">載入中…</div></div>
+  </div>
+
+  <!-- Equity Curve -->
+  <div class="card grid-full" id="card-equity">
+    <div class="card-header">
+      <div class="card-title">Equity Curve <span>— 淨值曲線</span></div>
+      <div style="display:flex;gap:16px;font-size:11px;color:var(--text-muted)" id="equity-stats"></div>
+    </div>
+    <div id="equity-content"><div class="loading">載入中…</div></div>
+  </div>
+
+  <!-- Positions -->
+  <div class="card grid-full" id="card-positions">
+    <div class="card-header">
+      <div class="card-title">Positions <span>— 當前持倉</span></div>
+      <div id="sector-bar" class="sector-bar"></div>
+    </div>
+    <div id="positions-content"><div class="loading">載入中…</div></div>
+  </div>
+
+  <!-- Ratings -->
+  <div class="card grid-full" id="card-ratings">
+    <div class="card-header">
+      <div class="card-title">Deep Analysis Ratings <span>— 多智能體評級</span></div>
+      <div id="ratings-summary" style="display:flex;gap:4px;flex-wrap:wrap"></div>
+    </div>
+    <div id="ratings-content"><div class="loading">載入中…</div></div>
+  </div>
+
+  <!-- Orders + Trades side by side -->
+  <div class="card" id="card-orders">
+    <div class="card-header">
+      <div class="card-title">Recent Orders <span>— 委託單</span></div>
+    </div>
+    <div id="orders-content"><div class="loading">載入中…</div></div>
+  </div>
+
+  <div class="card" id="card-trades">
+    <div class="card-header">
+      <div class="card-title">Recent Trades <span>— 成交紀錄</span></div>
+    </div>
+    <div id="trades-content"><div class="loading">載入中…</div></div>
+  </div>
+
+</div>
+
+<div style="margin-top:32px;padding-top:16px;border-top:1px solid var(--border);font-size:11px;color:var(--text-muted);text-align:center;line-height:1.8">
+  <p><strong>Trading Engine</strong> · 全自動美股 Paper Trading 系統 &nbsp;·&nbsp;
+    Alpaca · yfinance · Agnes AI · Tavily</p>
+  <p>僅供研究與教育用途，不構成投資建議。</p>
+</div>
+
+<script>
+// ── Utilities ───────────────────────────────────────────────
+const $ = id => document.getElementById(id);
+const ESC = { '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' };
+const esc = s => String(s).replace(/[&<>"']/g, c => ESC[c] || c);
+
+function fmt(n, d=2) {
+  if (n == null || n === 0) return '0.00';
+  const v = Number(n);
+  if (isNaN(v) || !isFinite(v)) return '—';
+  return v.toLocaleString('en-US', {minimumFractionDigits:d, maximumFractionDigits:d});
+}
+
+function fmtPct(n) {
+  if (n == null) return '—';
+  const v = Number(n);
+  if (isNaN(v) || !isFinite(v)) return '—';
+  return (v >= 0 ? '+' : '') + v.toFixed(2) + '%';
+}
+
+function fmtDollar(n) { return n == null ? '—' : '$' + fmt(n); }
+
+function arrow(v) {
+  if (v > 0) return '▴';
+  if (v < 0) return '▾';
+  return '–';
+}
+
+function cls(v) { return v > 0 ? 'green' : v < 0 ? 'red' : ''; }
+
+function ratingBadge(r) {
+  const map = {'Buy':'badge-buy','Overweight':'badge-overweight','Hold':'badge-hold','Underweight':'badge-underweight','Sell':'badge-sell'};
+  return `<span class="badge ${map[r]||'badge-gray'}">${r}</span>`;
+}
+
+function sideBadge(s) {
+  return `<span class="badge ${s==='buy'?'badge-green':'badge-red'}">${s||''}</span>`;
+}
+
+function statusDot(s) {
+  const map = {'monitoring':'dot-green','analyzing':'dot-blue','screening':'dot-yellow','starting':'dot-gray','stopped':'dot-red','idle':'dot-gray','analysis_ok':'dot-green','analysis_failed':'dot-red','analysis_timeout':'dot-yellow'};
+  return `<span class="dot ${map[s]||'dot-gray'}"></span>`;
+}
+
+function statusText(s) {
+  const map = {'monitoring':'監控中','analyzing':'分析中','screening':'篩選中','starting':'啟動中','stopped':'已停止','idle':'閒置','analysis_ok':'分析完成','analysis_failed':'分析失敗','analysis_timeout':'分析超時'};
+  return map[s] || s;
+}
+
+async function fetchJSON(url) {
+  try {
+    const r = await fetch(url);
+    if (!r.ok) throw new Error(r.status + ' ' + r.statusText);
+    const txt = await r.text();
+    return JSON.parse(txt);
+  } catch(e) {
+    return { error: e.message };
+  }
+}
+
+function ageText(days) {
+  if (days == null) return '';
+  if (days < 1) return Math.round(days*24) + 'h ago';
+  return Math.round(days) + 'd ago';
+}
+
+// ── Clock ───────────────────────────────────────────────────
+function updateClock() {
+  const now = new Date();
+  $('clock').textContent = now.toLocaleTimeString('zh-TW', {hour12:false, hour:'2-digit', minute:'2-digit'});
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// ── Renderers ───────────────────────────────────────────────
+
+function renderStatus(s) {
+  const badge = $('status-badge');
+  if (s.error || !s.state || s.state === 'unknown' || s.state === 'stopped') {
+    badge.className = 'status-badge off';
+    badge.innerHTML = '<span class="dot dot-gray"></span>離線';
+    return;
+  }
+  badge.className = 'status-badge live';
+  badge.innerHTML = statusDot(s.state) + ' ' + statusText(s.state) + (s.uptime ? ' · ' + s.uptime : '');
+}
+
+function renderSummary(acct, ratings) {
+  const pnl = acct?.total_unrealized_pnl ?? 0;
+  const value = acct?.portfolio_value;
+  $('summary-bar').innerHTML = `
+    <span class="summary-item">Portfolio Value <strong>$${fmt(value)}</strong></span>
+    <span class="summary-item">Cash <strong>$${fmt(acct?.cash)}</strong></span>
+    <span class="summary-item">Unrealized PnL <strong style="color:${cls(pnl)||'var(--text)'}">$${fmt(pnl)} ${arrow(pnl)}</strong></span>
+    <span class="summary-item">Positions <strong>${acct?.position_count ?? 0}</strong></span>
+    <span class="summary-item">Ratings Active <strong>${ratings?.count ?? 0}</strong></span>
+  `;
+}
+
+function renderRegime(d) {
+  if (d.error) { $('regime-content').innerHTML = `<div class="error-state">${d.error}</div>`; return; }
+  const regimeColors = {bull:'green', bear:'red', chop:'yellow', high_vol:'yellow'};
+  const rc = regimeColors[d.regime] || 'gray';
+  $('regime-content').innerHTML = `
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+      <span class="dot-${rc}" style="display:inline-block;width:10px;height:10px;border-radius:50%"></span>
+      <span style="font-size:16px;font-weight:600;text-transform:uppercase;letter-spacing:0.04em">${d.regime}</span>
+      <span style="margin-left:auto;font-size:12px;color:var(--text-secondary)">Size: <strong style="color:var(--text);font-family:var(--font-mono)">${(d.position_size_mult??1).toFixed(2)}x</strong></span>
+    </div>
+    <div class="stat-grid">
+      <div class="stat-row"><span class="stat-label">SPY</span><span class="stat-value">${d.spy_price != null ? '$'+fmt(d.spy_price) : '—'}</span></div>
+      <div class="stat-row"><span class="stat-label">ATR</span><span class="stat-value">${d.atr_pct != null ? fmt(d.atr_pct)+'%' : '—'}</span></div>
+      <div class="stat-row"><span class="stat-label">MA50</span><span class="stat-value">${d.ma50 != null ? '$'+fmt(d.ma50) : '—'}</span></div>
+      <div class="stat-row"><span class="stat-label">MA200</span><span class="stat-value">${d.ma200 != null ? '$'+fmt(d.ma200) : '—'}</span></div>
+      <div class="stat-row"><span class="stat-label">Price vs MA50</span><span class="stat-value ${cls(d.price_vs_ma50_pct)}">${fmtPct(d.price_vs_ma50_pct)}</span></div>
+      <div class="stat-row"><span class="stat-label">ATR %ile</span><span class="stat-value">${d.atr_percentile != null ? d.atr_percentile.toFixed(0)+'th' : '—'}</span></div>
+    </div>
+  `;
+}
+
+function renderAccount(d) {
+  if (d.error) { $('account-content').innerHTML = `<div class="error-state">${d.error}</div>`; return; }
+  $('account-content').innerHTML = `
+    <div class="card-value">$${fmt(d.portfolio_value)}</div>
+    <div class="card-label">Portfolio Value · Day Trades: ${d.day_trade_count ?? 0}</div>
+    <div class="stat-grid">
+      <div class="stat-row"><span class="stat-label">Cash</span><span class="stat-value">$${fmt(d.cash)}</span></div>
+      <div class="stat-row"><span class="stat-label">Buying Power</span><span class="stat-value">$${fmt(d.buying_power)}</span></div>
+      <div class="stat-row"><span class="stat-label">Unrealized PnL</span><span class="stat-value ${cls(d.total_unrealized_pnl)}">${fmtDollar(d.total_unrealized_pnl)} ${arrow(d.total_unrealized_pnl)}</span></div>
+      <div class="stat-row"><span class="stat-label">Positions</span><span class="stat-value">${d.position_count}</span></div>
+    </div>
+  `;
+  if (d.sector_exposure) {
+    const sectors = Object.entries(d.sector_exposure).map(([s,v]) =>
+      `<span class="sector-tag">${s} <strong>${v}%</strong></span>`
+    ).join('');
+    $('sector-bar').innerHTML = sectors;
+  }
+}
+
+function renderPerformance(d) {
+  if (d.error) { $('perf-content').innerHTML = `<div class="error-state">${d.error}</div>`; return; }
+  const hasData = d.total_trades > 0;
+  $('perf-content').innerHTML = hasData ? `
+    <div class="stat-grid">
+      <div class="stat-row"><span class="stat-label">Win Rate</span><span class="stat-value">${(d.win_rate*100).toFixed(1)}%</span></div>
+      <div class="stat-row"><span class="stat-label">Profit Factor</span><span class="stat-value">${(d.profit_factor??0).toFixed(2)}</span></div>
+      <div class="stat-row"><span class="stat-label">Sharpe</span><span class="stat-value ${cls(d.sharpe)}">${(d.sharpe??0).toFixed(2)}</span></div>
+      <div class="stat-row"><span class="stat-label">Sortino</span><span class="stat-value">${(d.sortino??0).toFixed(2)}</span></div>
+      <div class="stat-row"><span class="stat-label">Max Drawdown</span><span class="stat-value red">${(d.max_drawdown??0).toFixed(1)}%</span></div>
+      <div class="stat-row"><span class="stat-label">Volatility</span><span class="stat-value">${(d.volatility??0).toFixed(1)}%</span></div>
+    </div>
+    <div style="margin-top:8px;font-size:11px;color:var(--text-muted);border-top:1px solid var(--border-subtle);padding-top:6px">
+      Closed: <strong style="color:var(--text)">${d.closed_trades}</strong> trades · Avg Return: <strong class="${cls(d.avg_daily_return)}">${fmtPct(d.avg_daily_return)}</strong>/day
+    </div>
+  ` : `<div class="empty-state">尚無已平倉交易</div>`;
+}
+
+function renderQueue(d) {
+  if (d.error) { $('queue-content').innerHTML = `<div class="error-state">${d.error}</div>`; return; }
+  if (!d.total) { $('queue-content').innerHTML = `<div class="loading">等待分析排程…</div>`; return; }
+  const pct = d.total > 0 ? Math.round(d.completed_count/d.total*100) : 0;
+  $('queue-content').innerHTML = `
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px">
+      <div class="card-value sm">${d.completed_count}<span style="font-size:12px;color:var(--text-muted)">/${d.total}</span></div>
+      <div style="flex:1;height:6px;background:var(--border);border-radius:3px;overflow:hidden">
+        <div style="height:100%;width:${pct}%;background:var(--green);border-radius:3px;transition:width 0.5s"></div>
+      </div>
+      <span style="font-size:12px;color:var(--text-muted);font-family:var(--font-mono)">${pct}%</span>
+    </div>
+    ${d.pending_count > 0 ? `<div style="font-size:11px;color:var(--text-muted)">Pending: ${d.pending.join(', ')}</div>` : ''}
+    ${d.completed?.length ? `<div style="margin-top:6px;font-size:11px;color:var(--text-muted)">Completed: ${d.completed.slice(0,8).map(c => ratingBadge(c.rating) + ' ' + c.ticker).join(' ')}</div>` : ''}
+  `;
+}
+
+function renderEquity(d) {
+  const pts = d.equity_curve;
+  if (!pts?.length) {
+    $('equity-content').innerHTML = `<div class="empty-state">尚無淨值資料</div>`;
+    $('equity-stats').innerHTML = '';
+    return;
+  }
+  const vals = pts.map(p => p.value);
+  const first = vals[0], last = vals[vals.length-1];
+  const change = (last - first) / first * 100;
+  const min = Math.min(...vals), max = Math.max(...vals);
+  const range = max - min || 1;
+  const w = Math.max(pts.length * 28, 200), h = 90;
+  const px = i => i * (w / Math.max(pts.length-1, 1));
+  const py = v => h - ((v - min) / range * (h - 12)) - 6;
+  const path = pts.map((p,i) => `${i===0?'M':'L'}${px(i).toFixed(1)},${py(p.value).toFixed(1)}`).join(' ');
+  const color = last >= first ? '#3fb950' : '#f85149';
+  const fillGrad = `<linearGradient id="eqGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${color}" stop-opacity="0.15"/><stop offset="100%" stop-color="${color}" stop-opacity="0.01"/></linearGradient>`;
+  const fillPath = pts.map((p,i) => `${i===0?'M':'L'}${px(i).toFixed(1)},${py(p.value).toFixed(1)}`).join(' ')
+
+ + `L${px(pts.length-1).toFixed(1)},${h} L0,${h} Z`;
+
+  $('equity-stats').innerHTML = `
+    <span>Start: <strong style="color:var(--text)">$${fmt(first)}</strong></span>
+    <span>Current: <strong style="color:var(--text)">$${fmt(last)}</strong></span>
+    <span>Change: <strong class="${cls(change)}">${fmtPct(change)}</strong></span>
+  `;
+  $('equity-content').innerHTML = `
+    <div class="mini-chart">
+      <svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none">
+        <defs>${fillGrad}</defs>
+        <path d="${fillPath}" fill="url(#eqGrad)"/>
+        <path d="${path}" fill="none" stroke="${color}" stroke-width="1.5" vector-effect="non-scaling-stroke"/>
+      </svg>
+    </div>
+  `;
+}
+
+function renderPositions(d) {
+  if (d.error) { $('positions-content').innerHTML = `<div class="error-state">${d.error}</div>`; return; }
+  const list = d.positions;
+  if (!list?.length) { $('positions-content').innerHTML = `<div class="empty-state">無持倉</div>`; return; }
+  const rows = list.map(p => `
+    <tr>
+      <td><span class="ticker">${esc(p.ticker)}</span></td>
+      <td style="font-size:11px;color:var(--text-secondary)">${p.sector || '—'}</td>
+      <td style="font-family:var(--font-mono)">${p.qty}</td>
+      <td style="font-family:var(--font-mono)">$${fmt(p.avg_entry)}</td>
+      <td style="font-family:var(--font-mono)">$${fmt(p.current_price)}</td>
+      <td style="font-family:var(--font-mono)">$${fmt(p.market_value)}</td>
+      <td class="${cls(p.unrealized_pnl)}" style="font-family:var(--font-mono)">${arrow(p.unrealized_pnl)} $${fmt(Math.abs(p.unrealized_pnl))}</td>
+      <td class="${cls(p.unrealized_plpc)}" style="font-family:var(--font-mono)">${fmtPct(p.unrealized_plpc)}</td>
+    </tr>
+  `).join('');
+  $('positions-content').innerHTML = `
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Ticker</th><th>Sector</th><th>Qty</th><th>Entry</th><th>Price</th><th>Value</th><th>PnL</th><th>PnL %</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+  `;
+}
+
+function renderRatings(d) {
+  if (d.error) { $('ratings-content').innerHTML = `<div class="error-state">${d.error}</div>`; return; }
+  const list = d.ratings;
+  if (!list?.length) { $('ratings-content').innerHTML = `<div class="empty-state">${d.last_analysis ? '最後分析: '+d.last_analysis : '尚無分析資料'}</div>`; return; }
+  const ok = list.filter(r => !r.error);
+  const failed = list.filter(r => r.error);
+  const rows = ok.map(r => `
+    <tr>
+      <td><span class="ticker">${esc(r.ticker)}</span></td>
+      <td>${ratingBadge(r.rating)}</td>
+      <td>${r.price_target ? '$'+fmt(r.price_target) : '—'}</td>
+      <td style="color:var(--text-secondary);font-size:11px">${r.time_horizon || '—'}</td>
+      <td style="max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text-secondary);font-size:11px">${r.executive_summary ? esc(r.executive_summary).substring(0,70) + (r.executive_summary.length>70?'…':'') : '—'}</td>
+      <td style="font-size:11px;color:var(--text-muted);font-family:var(--font-mono)">${r.age_days != null ? ageText(r.age_days) : '—'}</td>
+    </tr>
+  `).join('');
+
+  // Summary badges
+  const byRating = {};
+  ok.forEach(r => { byRating[r.rating] = (byRating[r.rating]||0) + 1; });
+  $('ratings-summary').innerHTML = Object.entries(byRating).map(([k,v]) => ratingBadge(k) + ' ' + v).join(' ')
+    + (failed.length ? `<span class="badge badge-gray">⚠ ${failed.length} failed</span>` : '');
+
+  $('ratings-content').innerHTML = `
+    <div style="margin-bottom:8px;font-size:11px;color:var(--text-muted)">${ok.length}/${d.count} · 最後分析 ${d.last_analysis||'—'}</div>
+    ${failed.length ? `<div style="margin-bottom:6px;font-size:11px;color:var(--text-muted)">⚠ ${failed.map(r => esc(r.ticker)).join(', ')} 分析失敗</div>` : ''}
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Ticker</th><th>Rating</th><th>Target</th><th>Horizon</th><th>Summary</th><th>Age</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+  `;
+}
+
+function renderOrders(d) {
+  if (d.error) { $('orders-content').innerHTML = `<div class="error-state">${d.error}</div>`; return; }
+  const list = d.orders;
+  if (!list?.length) { $('orders-content').innerHTML = `<div class="empty-state">尚無訂單</div>`; return; }
+  // Status summary
+  const bs = d.by_status || {};
+  const summaryHtml = Object.entries(bs).map(([k,v]) =>
+    `<span class="badge badge-gray">${k}: ${v}</span>`
+  ).join('');
+
+  const rows = list.slice(0,15).map(o => `
+    <tr>
+      <td><span class="ticker">${esc(o.ticker)}</span></td>
+      <td>${sideBadge(o.side)}</td>
+      <td style="font-family:var(--font-mono)">${o.qty_filled}/${o.qty_requested}</td>
+      <td style="font-family:var(--font-mono)">${o.avg_fill_price ? '$'+fmt(o.avg_fill_price) : '—'}</td>
+      <td>${statusDot(o.status)} <span style="font-size:11px">${o.status}</span></td>
+      <td style="color:var(--text-secondary);font-size:11px;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(o.reason.substring(0,35))}</td>
+      <td style="color:var(--text-muted);font-size:11px;font-family:var(--font-mono)">${(o.created_at||'').substring(0,16).replace('T',' ')}</td>
+    </tr>
+  `).join('');
+  $('orders-content').innerHTML = `
+    <div style="margin-bottom:8px;display:flex;gap:4px;flex-wrap:wrap">${summaryHtml}</div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Ticker</th><th>Side</th><th>Filled/Qty</th><th>Price</th><th>Status</th><th>Reason</th><th>Time</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+  `;
+}
+
+function renderTrades(d) {
+  if (!Array.isArray(d) || !d.length) { $('trades-content').innerHTML = `<div class="empty-state">尚無成交紀錄</div>`; return; }
+  const rows = d.slice(0,15).map(t => `
+    <tr>
+      <td><span class="ticker">${esc(t.ticker||'')}</span></td>
+      <td>${sideBadge(t.side)}</td>
+      <td style="font-family:var(--font-mono)">${t.qty||0}</td>
+      <td style="font-family:var(--font-mono)">${t.price ? '$'+fmt(t.price) : '—'}</td>
+      <td style="color:var(--text-secondary);font-size:11px;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(t.reason||'').substring(0,35)}</td>
+      <td style="color:var(--text-muted);font-size:11px;font-family:var(--font-mono)">${(t.time||'').substring(0,16).replace('T',' ')}</td>
+    </tr>
+  `).join('');
+  $('trades-content').innerHTML = `
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Ticker</th><th>Side</th><th>Qty</th><th>Price</th><th>Reason</th><th>Time</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+  `;
+}
+
+// ── Main Refresh ────────────────────────────────────────────
+async function refresh() {
+  const now = new Date();
+  $('last-update').textContent = 'Updated ' + now.toLocaleTimeString('zh-TW', {hour12:false, hour:'2-digit', minute:'2-digit', second:'2-digit'});
+
+  const [status, regime, account, ratings, orders, trades, perf, queue] = await Promise.all([
+    fetchJSON('/api/status'),
+    fetchJSON('/api/regime'),
+    fetchJSON('/api/account'),
+    fetchJSON('/api/ratings'),
+    fetchJSON('/api/orders'),
+    fetchJSON('/api/trades'),
+    fetchJSON('/api/performance'),
+    fetchJSON('/api/analysis-queue'),
+  ]);
+
+  renderStatus(status);
+  renderSummary(account, ratings);
+  renderRegime(regime);
+  renderAccount(account);
+  renderPerformance(perf);
+  renderQueue(queue);
+  renderPositions(account);
+  renderRatings(ratings);
+  renderOrders(orders);
+  renderTrades(trades);
+  renderEquity(perf);
+}
+
+// ── Start ──
+refresh();
+setInterval(refresh, 10000);
+</script>
+</body>
+</html>

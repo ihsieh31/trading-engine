@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.tradingengine.scheduler</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>__HOME__/trading_engine/.venv/bin/python3</string>
+        <string>__HOME__/trading_engine/scheduler.py</string>
+    </array>
+
+    <key>WorkingDirectory</key>
+    <string>__HOME__/trading_engine</string>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>__HOME__/trading_engine/.venv/bin:/usr/local/bin:/usr/bin:/bin</string>
+    </dict>
+
+    <key>RunAtLoad</key>
+    <true/>
+
+    <key>KeepAlive</key>
+    <true/>
+
+    <key>StandardOutPath</key>
+    <string>__HOME__/trading_engine/data/scheduler-stdout.log</string>
+
+    <key>StandardErrorPath</key>
+    <string>__HOME__/trading_engine/data/scheduler-stderr.log</string>
+
+    <key>ThrottleInterval</key>
+    <integer>10</integer>
+</dict>
+</plist>
