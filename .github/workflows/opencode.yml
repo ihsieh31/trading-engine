@@ -15,12 +15,13 @@ on:
 jobs:
   opencode:
     if: |
-      github.event_name == 'schedule' ||
-      github.event_name == 'workflow_dispatch' ||
-      github.event_name == 'issues' ||
-      github.event_name == 'pull_request' ||
-      contains(github.event.comment.body, '/oc') ||
-      contains(github.event.comment.body, '/opencode')
+      (github.event_name == 'schedule' ||
+       github.event_name == 'workflow_dispatch' ||
+       github.event_name == 'issues' ||
+       github.event_name == 'pull_request') ||
+      (github.event.comment.user.login == 'ihsieh31' &&
+       (contains(github.event.comment.body, '/oc') ||
+        contains(github.event.comment.body, '/opencode')))
     runs-on: ubuntu-latest
     permissions:
       id-token: write
